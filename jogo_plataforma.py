@@ -3,13 +3,13 @@
 # =============================================================================
 
 # Configurações do sistema de tiles (grade do jogo)
-TILE_SIZE = 32          # Tamanho de cada quadrado/tile em pixels (reduzido para tela menor)
-ROWS = 15               # Número de linhas de tiles na tela
-COLS = 25               # Número de colunas de tiles na tela
+TILE_SIZE = 24          # Tamanho baseado nos sprites do Kenney (24x24px para personagens)
+ROWS = 20               # Número de linhas de tiles na tela
+COLS = 30               # Número de colunas de tiles na tela
 
 # Dimensões da janela do jogo
-WIDTH = COLS * TILE_SIZE    # Largura total: 25 tiles × 32px = 800px
-HEIGHT = ROWS * TILE_SIZE   # Altura total: 15 tiles × 32px = 480px
+WIDTH = COLS * TILE_SIZE    # Largura total: 30 tiles × 24px = 720px
+HEIGHT = ROWS * TILE_SIZE   # Altura total: 20 tiles × 24px = 480px
 TITLE = "PLATAFORM GAME"    # Título da janela
 
 # =============================================================================
@@ -44,4 +44,5 @@ HERO_WALK_SPEED = 0.1   # Velocidade da animação quando andando
 HERO_START_POS = TILE_SIZE, HEIGHT/2
 
 
-
+# Exemplo de como criar um personagem (comentado por enquanto)
+character = Actor("images/Characteres/")
