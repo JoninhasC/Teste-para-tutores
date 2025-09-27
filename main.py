@@ -1,6 +1,7 @@
 import pgzrun
 from configGlobal import *
-
+from player import Player
+from controls import handle_input
 
 # ===== VARIÁVEIS GLOBAIS =====
 game_state = MENU          # Estado atual do jogo (começa no menu)
@@ -49,10 +50,14 @@ def draw_game():
     screen.clear()
     screen.fill((100, 150, 200))  # Cor de fundo azul claro
     
+    # Desenhar o player
+    if player:
+        player.draw(screen)  # Passa o screen como parâmetro
+    
     # Por enquanto, só desenhamos um texto
     screen.draw.text("JOGO EM ANDAMENTO", 
-                     center=(WIDTH // 2, HEIGHT // 2), 
-                     fontsize=50, 
+                     center=(WIDTH // 2, 50), 
+                     fontsize=30, 
                      color="white")
 
 def on_mouse_down(pos):
@@ -81,8 +86,9 @@ def handle_menu_click(pos):
 
 def start_game():
     """ininicar o jogo"""
-    global game_state
+    global game_state, player
     game_state = PLAYING
+    player = Player(WIDTH//2, HEIGHT//2)  # Cria o player no centro da tela
     print("Inicializando Game")
 
 def toggle_sound():
@@ -92,23 +98,11 @@ def toggle_sound():
     MUSIC_ENABLED = not MUSIC_ENABLED
     print(f"Som: {'Ligado' if SOUND_ENABLED else 'Desligado'}")
    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+def update(dt):
+    """Atualiza a lógica do jogo"""
+    if game_state == PLAYING and player:
+        player.update()
+        handle_input(player, game_state)
 
 
 # ===== INICIAR O JOGO =====
