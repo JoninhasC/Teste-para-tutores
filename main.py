@@ -1,13 +1,14 @@
 import pgzrun
 from configGlobal import *
 from player import Player
+from level import Level
 from controls import handle_input
-from tiles import draw_level, check_collision  # Importar do tiles.py
 
 # ===== VARIÁVEIS GLOBAIS =====
 game_state = MENU          # Estado atual do jogo (começa no menu)
 player = None              # Objeto do herói (será criado depois)
 enemies = []               # Lista de inimigos
+level = None               # Objeto do nível/mapa
 menu_buttons = []          # Lista de botões do menu
 
 def draw():
@@ -50,19 +51,19 @@ def draw_game():
     screen.clear()
     screen.fill((100, 150, 200))  # Cor de fundo azul claro
     
-    # Desenhar o nível (usando tiles.py)
-    draw_level()
+    # Desenhar o mapa primeiro (fundo)
+    if level:
+        level.draw(screen)
     
-    # Desenhar o player
+    # Desenhar o player por cima
     if player:
-        player.draw(screen)  # Passa o screen como parâmetro
+        player.draw(screen)
     
     # Por enquanto, só desenhamos um texto
     screen.draw.text("JOGO EM ANDAMENTO", 
                      center=(WIDTH // 2, 50), 
                      fontsize=30, 
                      color="white")
-
 def on_mouse_down(pos):
     """
     Esta função é chamada quando o jogador clica
@@ -86,11 +87,13 @@ def handle_menu_click(pos):
     elif 500 <= y <= 600 and WIDTH//2 - 100 <= x <= WIDTH//2 + 100:
         exit()
 
+
 def start_game():
     """ininicar o jogo"""
-    global game_state, player
+    global game_state, player, level
     game_state = PLAYING
     player = Player(WIDTH//2, HEIGHT//2)  # Cria o player no centro da tela
+    level = Level()  # Cria o sistema de níveis
     print("Inicializando Game")
 
 def toggle_sound():
@@ -105,10 +108,7 @@ def update(dt):
     if game_state == PLAYING and player:
         player.update()
         handle_input(player, game_state)
-        
-        # Verificar colisões com o nível (usando tiles.py)
-        if check_collision(player):
-            print("Colisão detectada!")
+
 
 # ===== INICIAR O JOGO =====
 pgzrun.go()
