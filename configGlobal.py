@@ -3,6 +3,11 @@ import os
 # Força abrir a janela centralizada no monitor principal
 os.environ['SDL_VIDEO_CENTERED'] = '1'
 
+# configGlobal.py - EXPLICAÇÃO DETALHADA
+
+import pgzrun  # Biblioteca principal do jogo
+import random  # Para gerar números aleatórios (inimigos, etc.)
+import math    # Para cálculos matemáticos (distâncias, ângulos)
 
 # ===== CONFIGURAÇÕES DO JOGO =====
 TILE_SIZE = 64        # Tamanho de cada quadrado do mapa (64x64 pixels)

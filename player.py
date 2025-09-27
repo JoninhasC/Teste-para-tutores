@@ -1,117 +1,129 @@
-# player.py - Classe do herói do jogo
+# player.py - Classe do herói do jogo (compatível com PgZero)
 
 from configGlobal import *
 import math
 
 class Player:
     def __init__(self, x, y):
-        """Cria um novo player"""
-        # Posição
+        """Create a new player"""
+        # Position
         self.x = x
         self.y = y
-        
-        # Velocidade
-        self.vx = 0  # velocidade horizontal
-        self.vy = 0  # velocidade vertical
-        
-        # Estado
-        self.on_ground = False  # se está no chão
-        self.facing_right = True  # direção que está olhando
-        
-        # Animação - usando os sprites corretos com nomes em minúsculo
-        self.idle_images = ["characters/azul01.png"]  # Sprite de idle
-        self.walk_images = ["characters/azul01.png", 
-                           "characters/azul02.png"]  # Sprites de caminhada
-        self.jump_images = ["characters/azul01.png"]  # Sprite de pulo
-        
-        self.current_animation = "idle"
+
+        # Velocity
+        self.vx = 0.0
+        self.vy = 0.0
+
+        # State
+        self.on_ground = False
+        self.facing_right = True
+
+        # Animation lists (PgZero: coloque os PNGs em images/characters/ e referencie sem .png)
+        # Esquerda (originais)
+        self.idle_left_images = ["characters/azul01"]
+        self.walk_left_images = ["characters/azul01", "characters/azul02"]
+        self.jump_left_images = ["characters/azul01"]
+
+        # Direita (espelhadas) -> crie os arquivos espelhados: azul01_r.png, azul02_r.png
+        # Se ainda não tiver os arquivos, você pode temporariamente repetir as imagens da esquerda,
+        # mas o personagem não parecerá espelhado até você adicionar as versões _r.
+        self.idle_right_images = ["characters/azul01r"]
+        self.walk_right_images = ["characters/azul01r", "characters/azul02r"]
+        self.jump_right_images = ["characters/azul01r"]
+
+        # Animation control
+        self.current_animation = "idle"  # "idle", "walk", "jump"
         self.animation_frame = 0
         self.animation_timer = 0
-        self.animation_speed = 8
-        
-        # Tamanho do sprite (ajustado para 128x256)
-        self.width = 64  # Metade da largura original
-        self.height = 128  # Metade da altura original
-        
-        
+        self.animation_speed = 8  # ticks per frame
+
+        # Logical sprite size used only for centering offsets (não muda o tamanho real da imagem)
+        # Se você substituir os PNGs por versões maiores, ajuste estes valores para centralizar.
+        self.width = 64
+        self.height = 128
+
     def update(self):
-        """Atualiza a lógica do player"""
-        # Aplicar gravidade
+        """Update player logic"""
+        # Gravity
         self.vy += GRAVITY
-        
-        # Atualizar posição
+
+        # Position
         self.x += self.vx
         self.y += self.vy
-        
-        # Verificar se está no chão (por enquanto, chão fixo)
-        if self.y >= HEIGHT - 100:  # 100 pixels do chão
+
+        # Simple ground check
+        if self.y >= HEIGHT - 100:
             self.y = HEIGHT - 100
             self.vy = 0
             self.on_ground = True
         else:
             self.on_ground = False
-            
-        # Limitar velocidade horizontal
+
+        # Horizontal friction
         if self.vx > 0:
-            self.vx = max(0, self.vx - 0.5)  # freio
+            self.vx = max(0.0, self.vx - 0.5)
         elif self.vx < 0:
-            self.vx = min(0, self.vx + 0.5)  # freio
-        
-        # Atualizar animação
+            self.vx = min(0.0, self.vx + 0.5)
+
+        # Animation
         self.update_animation()
-    
+
     def update_animation(self):
-        """Atualiza a animação do player"""
-        # Determinar qual animação usar
-        if not self.on_ground:
-            self.current_animation = "jump"
-        elif abs(self.vx) > 0.1:
-            self.current_animation = "walk"
-        else:
-            self.current_animation = "idle"
-        
-        # Atualizar frame da animação
+        """Update animation state and frame"""
+        new_animation = "jump" if not self.on_ground else ("walk" if abs(self.vx) > 0.1 else "idle")
+
+        # Reset when animation changes to avoid invalid frame index
+        if new_animation != self.current_animation:
+            self.current_animation = new_animation
+            self.animation_frame = 0
+            self.animation_timer = 0
+
+        images = self.get_current_images()
+        if not images:
+            return
+
         self.animation_timer += 1
         if self.animation_timer >= self.animation_speed:
             self.animation_timer = 0
-            self.animation_frame = (self.animation_frame + 1) % len(self.get_current_images())
-    
+            self.animation_frame = (self.animation_frame + 1) % len(images)
+
     def get_current_images(self):
-        """Retorna as imagens da animação atual"""
+        """Choose images by animation and facing direction"""
+        right = self.facing_right
         if self.current_animation == "idle":
-            return self.idle_images
-        elif self.current_animation == "walk":
-            return self.walk_images
-        elif self.current_animation == "jump":
-            return self.jump_images
-        return self.idle_images
-    
+            return self.idle_right_images if right else self.idle_left_images
+        if self.current_animation == "walk":
+            return self.walk_right_images if right else self.walk_left_images
+        if self.current_animation == "jump":
+            return self.jump_right_images if right else self.jump_left_images
+        # fallback
+        return self.idle_right_images if right else self.idle_left_images
+
     def draw(self, screen):
-        """Desenha o player na tela"""
-        # Obter imagem atual
-        current_images = self.get_current_images()
-        current_image = current_images[self.animation_frame]
-        
-        # Desenhar sprite
-        if self.facing_right:
-            screen.blit(current_image, (self.x - self.width//2, self.y - self.height//2))
-        else:
-            # Virar sprite horizontalmente
-            screen.blit(current_image, (self.x - self.width//2, self.y - self.height//2), 
-                      flipx=True)
-    
+        """Draw the player"""
+        images = self.get_current_images()
+        if not images:
+            return
+
+        frame_index = self.animation_frame % len(images)
+        image_name = images[frame_index]
+
+        # Em PgZero, desenhe pelo nome do recurso (sem flip, sem extensão).
+        # A imagem deve existir em images/characters/<arquivo>.png
+        screen.blit(image_name, (self.x - self.width // 2, self.y - self.height // 2))
+
     def move_left(self):
-        """Move o player para a esquerda"""
+        """Move player left"""
         self.vx = -PLAYER_SPEED
         self.facing_right = False
-    
+
     def move_right(self):
-        """Move o player para a direita"""
+        """Move player right"""
         self.vx = PLAYER_SPEED
         self.facing_right = True
-    
+
     def jump(self):
-        """Faz o player pular"""
+        """Make the player jump"""
         if self.on_ground:
             self.vy = JUMP_STRENGTH
             self.on_ground = False
