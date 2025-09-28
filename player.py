@@ -1,6 +1,7 @@
 # player.py - Classe do herói do jogo (compatível com PgZero)
 
 from configGlobal import *
+import configGlobal
 import math
 
 class Player:
@@ -44,6 +45,7 @@ class Player:
         
         # Debug
         self._debug_ticks = 0
+        self.lives = MAX_LIVES
 
     def update(self, level=None):
         """Update player logic (colisão separada por eixos e plataformas top-only)."""
@@ -62,8 +64,11 @@ class Player:
             # --- mover no eixo X ---
             self.x += self.vx
             player_rect_x = (self.x - self.width//2, self.y - self.height//2, self.width, self.height)
-            # Colidir só com sólidos no eixo X
-            solids = level.get_tiles_overlapping(player_rect_x, {"SOLID"})
+            # Colidir só com sólidos no eixo X (em modo DEV, DANGER também é sólido)
+            if configGlobal.DEV_MODE:
+                solids = level.get_tiles_overlapping(player_rect_x, {"SOLID", "DANGER"})
+            else:
+                solids = level.get_tiles_overlapping(player_rect_x, {"SOLID"})
             if solids:
                 # Recuar no X ao ponto anterior
                 self.x = old_x
@@ -73,12 +78,12 @@ class Player:
             old_y = self.y
             self.y += self.vy
             player_rect_y = (self.x - self.width//2, self.y - self.height//2, self.width, self.height)
-            # Checar sólidos e plataformas
-            tiles_y = level.get_tiles_overlapping(player_rect_y, {"SOLID", "PLATFORM", "DANGER", "COLLECTIBLE"})
+            # Checar sólidos e plataformas (sempre incluir DANGER para detecção de dano)
+            tiles_y = level.get_tiles_overlapping(player_rect_y, {"SOLID", "PLATFORM", "COLLECTIBLE", "DANGER"})
             # Reset estado de chão; será setado se pousar
             self.on_ground = False
             for t in tiles_y:
-                if t.tile_type == "SOLID":
+                if t.tile_type == "SOLID" or (t.tile_type == "DANGER" and configGlobal.DEV_MODE):
                     # Se descendo, pousa no topo; se subindo, bate na parte de baixo
                     if self.vy > 0:
                         self.y = (t.y) - (self.height // 2)
@@ -95,7 +100,9 @@ class Player:
                         self.y = top - (self.height // 2)
                         self.vy = 0
                         self.on_ground = True
-                elif t.tile_type == "DANGER":
+                elif t.tile_type == "DANGER" and not configGlobal.DEV_MODE:
+                    # Só mata se não estiver em modo DEV
+                    print(f"Player tocou em tile DANGER! Tile ID: {t.tile_id}")
                     self.die()
                 elif t.tile_type == "COLLECTIBLE":
                     self.collect_item(t)
@@ -209,8 +216,8 @@ class Player:
             else:
                 self.on_ground = False
         
-        # Perigo - mata o player
-        if collisions['danger']:
+        # Perigo - mata o player (só se não estiver em modo DEV)
+        if collisions['danger'] and not configGlobal.DEV_MODE:
             self.die()
         
         # Coletáveis
@@ -219,7 +226,17 @@ class Player:
     
     def die(self):
         """Player morre"""
-        print("Player morreu!")
+        print(f"Player morreu! DEV_MODE: {configGlobal.DEV_MODE}")
+        # Reduz vida
+        if self.lives > 0:
+            self.lives -= 1
+        if self.lives <= 0:
+            # sinalizar game over
+            try:
+                from configGlobal import GAME_OVER
+                import builtins
+            except Exception:
+                pass
         # Por enquanto, só reseta a posição
         phase = getattr(self, '_phase', 1)
         if phase == 2:

@@ -23,6 +23,8 @@ MENU = 0
 PLAYING = 1
 PAUSED = 2
 VICTORY = 3
+GAME_OVER = 4
+CONTROLS = 5
 
 # ===== CONFIGURAÇÕES DE ÁUDIO =====
 SOUND_ENABLED = True
@@ -36,6 +38,12 @@ ENEMY_SPEED = 2
 
 # ===== CONFIGURAÇÕES DE ANIMAÇÃO =====
 ANIMATION_SPEED = 8
+
+# ===== SISTEMA DE VIDAS =====
+MAX_LIVES = 5
+
+# ===== MODO DEV =====
+DEV_MODE = False  # Modo desenvolvedor (imortalidade)
 
 # ===== TIPOS DE TILE PARA COLISÃO =====
 # Sistema dinâmico - cada tile_id tem um tipo de colisão

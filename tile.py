@@ -16,6 +16,8 @@ class Tile:
         """Determina o tipo de colisão do tile dinamicamente"""
         for tile_type, ids in TILE_COLLISION_TYPES.items():
             if tile_id in ids:
+                if tile_id == 68:  # Debug para tile DANGER específico
+                    print(f"Tile {tile_id} classificado como {tile_type}")
                 return tile_type
         return "EMPTY"
     
@@ -41,6 +43,8 @@ class Tile:
     
     def get_collision_rect(self):
         """Retorna retângulo de colisão específico para o tipo, com padding para evitar colisão maior que o visual"""
+        import configGlobal
+        
         padding = 2  # reduz hitbox para dentro do tile
         if self.tile_type == "PLATFORM":
             # Plataforma: só colisão na parte superior, com leve recuo lateral
@@ -49,8 +53,11 @@ class Tile:
             # Sólido: colisão completa porém levemente menor que o tile para não "agarrar" nas bordas
             return (self.x + padding, self.y + padding, self.width - 2 * padding, self.height - 2 * padding)
         if self.tile_type == "DANGER":
-            # Hitbox menor para reduzir falsos acertos
-            inset = 4
+            # Em modo DEV, tiles DANGER se comportam como SOLID
+            if configGlobal.DEV_MODE:
+                return (self.x + padding, self.y + padding, self.width - 2 * padding, self.height - 2 * padding)
+            # Fora do modo DEV, hitbox maior para detecção de dano
+            inset = 2
             return (self.x + inset, self.y + inset, self.width - 2 * inset, self.height - 2 * inset)
         if self.tile_type == "COLLECTIBLE":
             # Pegada um pouco menor que o tile
