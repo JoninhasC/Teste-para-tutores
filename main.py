@@ -1,3 +1,5 @@
+# main.py - Ajustado para as novas dimensões
+
 import pgzrun
 from configGlobal import *
 from player import Player
@@ -26,25 +28,30 @@ def draw_menu():
     screen.clear()  # Limpa a tela
     screen.fill((50, 50, 100))  # Cor de fundo azul escuro
     
-    # Título do jogo
+    # Título do jogo (ajustado para tela menor)
     screen.draw.text("PLATFORMER GAME", 
-                     center=(WIDTH // 2, 200), 
-                     fontsize=60, 
-                     color="white")
-     # Botão START
-    screen.draw.text("START GAME", 
-                     center=(WIDTH // 2, 350), 
+                     center=(WIDTH // 2, 80), 
                      fontsize=40, 
+                     color="white")
+    
+    # Botão START (ajustado)
+    screen.draw.text("START GAME", 
+                     center=(WIDTH // 2, 150), 
+                     fontsize=25, 
                      color="yellow")
-    # Botão SOUND
+    
+    # Botão SOUND (ajustado)
     sound_text = "SOUND: ON" if SOUND_ENABLED else "SOUND: OFF"
     screen.draw.text(sound_text, 
-                     center=(WIDTH // 2, 450), 
-                     fontsize=40, 
+                     center=(WIDTH // 2, 200), 
+                     fontsize=25, 
                      color="white")
-    # Botão EXIT
+    
+    # Botão EXIT (ajustado)
     screen.draw.text("EXIT", 
-                     center=(WIDTH // 2, 550),fontsize=40,color="red")
+                     center=(WIDTH // 2, 250), 
+                     fontsize=25, 
+                     color="red")
 
 def draw_game():
     """Desenha o jogo"""
@@ -59,11 +66,8 @@ def draw_game():
     if player:
         player.draw(screen)
     
-    # Por enquanto, só desenhamos um texto
-    screen.draw.text("JOGO EM ANDAMENTO", 
-                     center=(WIDTH // 2, 50), 
-                     fontsize=30, 
-                     color="white")
+   
+
 def on_mouse_down(pos):
     """
     Esta função é chamada quando o jogador clica
@@ -73,26 +77,26 @@ def on_mouse_down(pos):
         handle_menu_click(pos)
 
 def handle_menu_click(pos):
-    """ Processa cliques no menun"""
-    x,y = pos 
-     # Verifica se clicou no botão START (área aproximada)
-    if 300 <= y <= 400 and WIDTH//2 - 100 <= x <= WIDTH//2 + 100:
+    """ Processa cliques no menu"""
+    x, y = pos 
+    
+    # Verifica se clicou no botão START (área ajustada)
+    if 120 <= y <= 180 and WIDTH//2 - 80 <= x <= WIDTH//2 + 80:
         start_game()
     
     # Verifica se clicou no botão SOUND
-    elif 400 <= y <= 500 and WIDTH//2 - 100 <= x <= WIDTH//2 + 100:
+    elif 170 <= y <= 230 and WIDTH//2 - 80 <= x <= WIDTH//2 + 80:
         toggle_sound()
     
     # Verifica se clicou no botão EXIT
-    elif 500 <= y <= 600 and WIDTH//2 - 100 <= x <= WIDTH//2 + 100:
+    elif 220 <= y <= 280 and WIDTH//2 - 80 <= x <= WIDTH//2 + 80:
         exit()
-
 
 def start_game():
     """ininicar o jogo"""
     global game_state, player, level
     game_state = PLAYING
-    player = Player(WIDTH//2, HEIGHT//2)  # Cria o player no centro da tela
+    player = Player(SPAWN_X, SPAWN_Y)  # Cria o player na posição definida
     level = Level()  # Cria o sistema de níveis
     print("Inicializando Game")
 
@@ -102,13 +106,12 @@ def toggle_sound():
     SOUND_ENABLED = not SOUND_ENABLED
     MUSIC_ENABLED = not MUSIC_ENABLED
     print(f"Som: {'Ligado' if SOUND_ENABLED else 'Desligado'}")
-   
+
 def update(dt):
     """Atualiza a lógica do jogo"""
     if game_state == PLAYING and player:
-        player.update()
+        player.update(level)  # Passa o level para o player
         handle_input(player, game_state)
-
 
 # ===== INICIAR O JOGO =====
 pgzrun.go()

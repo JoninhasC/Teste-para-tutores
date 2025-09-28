@@ -28,10 +28,38 @@ SOUND_ENABLED = True
 MUSIC_ENABLED = True
 
 # ===== CONFIGURAÇÕES DE FÍSICA =====
-GRAVITY = 0.8
+GRAVITY = 1
 JUMP_STRENGTH = -15
-PLAYER_SPEED = 5
+PLAYER_SPEED = 3
 ENEMY_SPEED = 2
 
 # ===== CONFIGURAÇÕES DE ANIMAÇÃO =====
 ANIMATION_SPEED = 8
+
+# ===== TIPOS DE TILE PARA COLISÃO =====
+# Sistema dinâmico - cada tile_id tem um tipo de colisão
+TILE_COLLISION_TYPES = {
+    # Sólidos (colisão completa)
+    "SOLID": [1, 2, 3, 41, 42, 43, 101, 102, 103, 121, 122, 123, 135, 141, 142, 143],
+    
+    # Plataformas (só colisão por cima)
+    "PLATFORM": [61, 62, 63, 81, 82, 83, 93, 133],
+    
+    # Perigosos (mata o player)
+    "DANGER": [68],
+    
+    # Coletáveis (sem colisão, só coleta)
+    "COLLECTIBLE": [67],
+    
+    # Decoração (sem colisão)
+    "DECORATION": [129, 128, 144, 124, 126, 40, 0, 33, 54, 74],
+    
+    # Vazio
+    "EMPTY": [-1]
+}
+
+# ===== POSIÇÃO INICIAL (SPAWN) =====
+SPAWN_X = 8
+SPAWN_Y = 330
+
+

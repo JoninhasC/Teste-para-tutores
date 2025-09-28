@@ -1,6 +1,7 @@
-# level.py - Sistema de geração de níveis CORRIGIDO
+# level.py - Sistema de geração de níveis com colisão dinâmica
 
 from configGlobal import *
+from tile import Tile
 import csv
 
 class Level:
@@ -10,9 +11,11 @@ class Level:
         self.objects = []    # final_obj.csv  
         self.collectibles = []  # final_peg.csv
         self.decorations = []  # final_deco.csv
+        self.tiles = []  # Matriz de tiles com colisão
         
         # Carregar o mapa
         self.load_level()
+        self.build_collision_map()
     
     def load_level(self):
         """Carrega o mapa dos arquivos CSV"""
@@ -25,6 +28,53 @@ class Level:
         self.load_csv("final_deco.csv", self.decorations, "decorações")
         
         print(f"Mapa carregado: {len(self.platforms)}x{len(self.platforms[0]) if self.platforms else 0}")
+    
+    def build_collision_map(self):
+        """Constrói o mapa de colisão dinamicamente"""
+        print("Construindo mapa de colisão...")
+        
+        # Inicializar matriz de tiles
+        self.tiles = []
+        for y in range(ROWS):
+            tile_row = []
+            for x in range(COLS):
+                # Determinar qual tile_id usar (prioridade: plataformas > objetos > itens > decoração)
+                tile_id = -1
+                
+                # 1. Verificar plataformas (prioridade máxima)
+                if y < len(self.platforms) and x < len(self.platforms[y]):
+                    if self.platforms[y][x] != -1:
+                        tile_id = self.platforms[y][x]
+                
+                # 2. Verificar objetos
+                if tile_id == -1 and y < len(self.objects) and x < len(self.objects[y]):
+                    if self.objects[y][x] != -1:
+                        tile_id = self.objects[y][x]
+                
+                # 3. Verificar itens coletáveis
+                if tile_id == -1 and y < len(self.collectibles) and x < len(self.collectibles[y]):
+                    if self.collectibles[y][x] != -1:
+                        tile_id = self.collectibles[y][x]
+                
+                # 4. Verificar decorações
+                if tile_id == -1 and y < len(self.decorations) and x < len(self.decorations[y]):
+                    if self.decorations[y][x] != -1:
+                        tile_id = self.decorations[y][x]
+                
+                # Criar tile com colisão (com informação da camada)
+                # A camada determina o comportamento (ex.: DANGER só em 'object')
+                layer_name = (
+                    "platform" if (y < len(self.platforms) and x < len(self.platforms[y]) and self.platforms[y][x] != -1) else
+                    ("object" if (y < len(self.objects) and x < len(self.objects[y]) and self.objects[y][x] != -1) else
+                     ("collectible" if (y < len(self.collectibles) and x < len(self.collectibles[y]) and self.collectibles[y][x] != -1) else
+                      ("decoration" if (y < len(self.decorations) and x < len(self.decorations[y]) and self.decorations[y][x] != -1) else "empty")))
+                )
+                tile = Tile(tile_id, x, y, layer_name)
+                tile_row.append(tile)
+            
+            self.tiles.append(tile_row)
+        
+        print(f"✓ Mapa de colisão construído: {len(self.tiles)}x{len(self.tiles[0]) if self.tiles else 0}")
     
     def load_csv(self, filename, target_list, layer_name):
         """Carrega um arquivo CSV e converte para lista de tiles"""
@@ -91,3 +141,79 @@ class Level:
         elif layer_type == "decoration":
             return (34, 139, 34)  # Verde para decorações
         return (255, 255, 255)  # Branco padrão
+    
+    def get_tile_at(self, x, y):
+        """Retorna o tile na posição (x, y)"""
+        if 0 <= y < ROWS and 0 <= x < COLS:
+            return self.tiles[y][x]
+        return None
+    
+    def check_collision(self, player_rect):
+        """Verifica colisões do player com tiles"""
+        collisions = {
+            'solid': False,
+            'platform': False,
+            'danger': False,
+            'collectible': []
+        }
+        
+        # Verificar tiles ao redor do player (otimização)
+        start_x = max(0, int(player_rect[0] // TILE_SIZE) - 1)
+        end_x = min(COLS, int((player_rect[0] + player_rect[2]) // TILE_SIZE) + 2)
+        start_y = max(0, int(player_rect[1] // TILE_SIZE) - 1)
+        end_y = min(ROWS, int((player_rect[1] + player_rect[3]) // TILE_SIZE) + 2)
+        
+        for y in range(start_y, end_y):
+            for x in range(start_x, end_x):
+                tile = self.get_tile_at(x, y)
+                if tile and tile.tile_id != -1:
+                    cx, cy, cw, ch = tile.get_collision_rect()
+                    # Ignorar tiles sem área de colisão (decoração/vazio)
+                    if cw <= 0 or ch <= 0:
+                        continue
+                    if self.rects_collide(player_rect, (cx, cy, cw, ch)):
+                        if tile.tile_type == "SOLID":
+                            collisions['solid'] = True
+                        elif tile.tile_type == "PLATFORM":
+                            collisions['platform'] = True
+                        elif tile.is_dangerous():
+                            collisions['danger'] = True
+                        elif tile.is_collectible():
+                            collisions['collectible'].append(tile)
+        
+        return collisions
+    
+    def rects_collide(self, rect1, rect2):
+        """Verifica se dois retângulos colidem"""
+        return (rect1[0] < rect2[0] + rect2[2] and
+                rect1[0] + rect1[2] > rect2[0] and
+                rect1[1] < rect2[1] + rect2[3] and
+                rect1[1] + rect1[3] > rect2[1])
+
+    def get_tiles_overlapping(self, rect, include_types=None):
+        """Retorna lista de tiles cujo retângulo de colisão intersecta 'rect'.
+        include_types: conjunto opcional de tipos (e.g., {"SOLID", "PLATFORM"}).
+        Decorações e vazios são automaticamente ignorados.
+        """
+        tiles = []
+        start_x = max(0, int(rect[0] // TILE_SIZE) - 1)
+        end_x = min(COLS, int((rect[0] + rect[2]) // TILE_SIZE) + 2)
+        start_y = max(0, int(rect[1] // TILE_SIZE) - 1)
+        end_y = min(ROWS, int((rect[1] + rect[3]) // TILE_SIZE) + 2)
+
+        for y in range(start_y, end_y):
+            for x in range(start_x, end_x):
+                tile = self.get_tile_at(x, y)
+                if not tile or tile.tile_id == -1:
+                    continue
+                # ignorar decoração e vazio
+                if tile.tile_type in ("DECORATION", "EMPTY"):
+                    continue
+                if include_types and tile.tile_type not in include_types:
+                    continue
+                cx, cy, cw, ch = tile.get_collision_rect()
+                if cw <= 0 or ch <= 0:
+                    continue
+                if self.rects_collide(rect, (cx, cy, cw, ch)):
+                    tiles.append(tile)
+        return tiles

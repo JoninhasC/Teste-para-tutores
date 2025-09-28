@@ -38,26 +38,72 @@ class Player:
         self.animation_speed = 8  # ticks per frame
 
         # Logical sprite size used only for centering offsets (não muda o tamanho real da imagem)
-        # Se você substituir os PNGs por versões maiores, ajuste estes valores para centralizar.
-        self.width = 64
-        self.height = 128
+        # Ajustado para ser compatível com tiles de 18x18
+        self.width = 16  # Menor que o tile (18)
+        self.height = 24  # Maior que o tile para parecer mais realista
+        
+        # Debug
+        self._debug_ticks = 0
 
-    def update(self):
-        """Update player logic"""
+    def update(self, level=None):
+        """Update player logic (colisão separada por eixos e plataformas top-only)."""
         # Gravity
         self.vy += GRAVITY
 
-        # Position
-        self.x += self.vx
-        self.y += self.vy
+        # Salvar posição anterior
+        old_x, old_y = self.x, self.y
 
-        # Simple ground check
-        if self.y >= HEIGHT - 100:
-            self.y = HEIGHT - 100
-            self.vy = 0
-            self.on_ground = True
-        else:
+        if level:
+            # --- mover no eixo X ---
+            self.x += self.vx
+            player_rect_x = (self.x - self.width//2, self.y - self.height//2, self.width, self.height)
+            # Colidir só com sólidos no eixo X
+            solids = level.get_tiles_overlapping(player_rect_x, {"SOLID"})
+            if solids:
+                # Recuar no X ao ponto anterior
+                self.x = old_x
+                self.vx = 0
+
+            # --- mover no eixo Y ---
+            old_y = self.y
+            self.y += self.vy
+            player_rect_y = (self.x - self.width//2, self.y - self.height//2, self.width, self.height)
+            # Checar sólidos e plataformas
+            tiles_y = level.get_tiles_overlapping(player_rect_y, {"SOLID", "PLATFORM", "DANGER", "COLLECTIBLE"})
+            # Reset estado de chão; será setado se pousar
             self.on_ground = False
+            for t in tiles_y:
+                if t.tile_type == "SOLID":
+                    # Se descendo, pousa no topo; se subindo, bate na parte de baixo
+                    if self.vy > 0:
+                        self.y = (t.y) - (self.height // 2)
+                    elif self.vy < 0:
+                        self.y = (t.y + t.height) + (self.height // 2)
+                    self.vy = 0
+                    self.on_ground = True
+                elif t.tile_type == "PLATFORM":
+                    # Plataforma só bloqueia quando descendo e quando o pé cruzou o topo da plataforma
+                    top = t.y
+                    feet_prev = old_y + (self.height // 2)
+                    feet_now = self.y + (self.height // 2)
+                    if self.vy > 0 and feet_prev <= top and feet_now >= top:
+                        self.y = top - (self.height // 2)
+                        self.vy = 0
+                        self.on_ground = True
+                elif t.tile_type == "DANGER":
+                    self.die()
+                elif t.tile_type == "COLLECTIBLE":
+                    self.collect_item(t)
+        else:
+            # Fallback: colisão simples com chão
+            self.x += self.vx
+            self.y += self.vy
+            if self.y >= HEIGHT - 100:
+                self.y = HEIGHT - 100
+                self.vy = 0
+                self.on_ground = True
+            else:
+                self.on_ground = False
 
         # Horizontal friction
         if self.vx > 0:
@@ -67,6 +113,10 @@ class Player:
 
         # Animation
         self.update_animation()
+
+        # Limitar à tela e imprimir posição (debug)
+        self._clamp_to_screen()
+        self._print_debug_position()
 
     def update_animation(self):
         """Update animation state and frame"""
@@ -127,3 +177,80 @@ class Player:
         if self.on_ground:
             self.vy = JUMP_STRENGTH
             self.on_ground = False
+    
+    def check_tile_collisions(self, level, old_x, old_y):
+        """Verifica colisões com tiles do cenário"""
+        # Criar retângulo do player
+        player_rect = (self.x - self.width//2, self.y - self.height//2, 
+                       self.width, self.height)
+        
+        # Verificar colisões
+        collisions = level.check_collision(player_rect)
+        
+        # Colisão sólida - reverter movimento
+        if collisions['solid']:
+            self.x = old_x
+            self.y = old_y
+            self.vx = 0
+            self.vy = 0
+            self.on_ground = True
+        
+        # Plataforma - só colisão por cima
+        elif collisions['platform']:
+            if self.vy > 0:  # Caindo
+                self.y = old_y
+                self.vy = 0
+                self.on_ground = True
+            else:
+                self.on_ground = False
+        
+        # Perigo - mata o player
+        if collisions['danger']:
+            self.die()
+        
+        # Coletáveis
+        for tile in collisions['collectible']:
+            self.collect_item(tile)
+    
+    def die(self):
+        """Player morre"""
+        print("Player morreu!")
+        # Por enquanto, só reseta a posição
+        self.x = SPAWN_X
+        self.y = SPAWN_Y
+        self.vx = 0
+        self.vy = 0
+    
+    def collect_item(self, tile):
+        """Coleta um item"""
+        print(f"Coletou item: {tile.tile_id}")
+        # Por enquanto, só remove o tile (marcar como coletado)
+        tile.tile_id = -1
+
+    # Utilitários
+    def _clamp_to_screen(self):
+        """Mantém o player dentro da tela."""
+        left = self.width // 2
+        right = WIDTH - self.width // 2
+        top = self.height // 2
+        bottom = HEIGHT - self.height // 2
+
+        if self.x < left:
+            self.x = left
+            self.vx = 0
+        elif self.x > right:
+            self.x = right
+            self.vx = 0
+
+        if self.y < top:
+            self.y = top
+            self.vy = 0
+        elif self.y > bottom:
+            self.y = bottom
+            self.vy = 0
+
+    def _print_debug_position(self):
+        """Imprime posição no terminal em baixa frequência para facilitar depuração."""
+        self._debug_ticks += 1
+        if self._debug_ticks % 10 == 0:  # reduz spam
+            print(f"Player pos -> x: {int(self.x)}  y: {int(self.y)}")
