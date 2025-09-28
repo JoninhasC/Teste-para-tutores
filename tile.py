@@ -2,6 +2,7 @@ from configGlobal import *
 
 class Tile:
     def __init__(self, tile_id, x, y, layer):
+        # ===== PROPRIEDADES BÁSICAS =====
         self.tile_id = tile_id
         self.layer = layer
         self.x = x * TILE_SIZE
@@ -10,7 +11,9 @@ class Tile:
         self.height = TILE_SIZE
         self.tile_type = self.get_tile_type(tile_id)
         
+    # ===== CLASSIFICAÇÃO DO TIPO =====
     def get_tile_type(self, tile_id):
+        # Consulta tabela global para descobrir como o tile interage com o jogador
         for tile_type, ids in TILE_COLLISION_TYPES.items():
             if tile_id in ids:
                 if tile_id == 68:
@@ -18,6 +21,7 @@ class Tile:
                 return tile_type
         return "EMPTY"
     
+    # ===== FUNÇÕES DE VERIFICAÇÃO DE TIPO =====
     def is_solid(self):
         return self.tile_type in ["SOLID", "PLATFORM"]
     
@@ -30,23 +34,29 @@ class Tile:
     def is_platform(self):
         return self.tile_type == "PLATFORM"
     
+    # ===== GEOMETRIA BÁSICA =====
     def get_rect(self):
         return (self.x, self.y, self.width, self.height)
     
+    # ===== SISTEMA DE HITBOX CUSTOMIZADA =====
     def get_collision_rect(self):
         import configGlobal
         
         padding = 2
         if self.tile_type == "PLATFORM":
+            # Plataformas expõem apenas uma faixa fina no topo para permitir salto atravessando de baixo
             return (self.x + padding, self.y, self.width - 2 * padding, 3)
         if self.tile_type == "SOLID":
+            # Sólidos usam um retângulo reduzido para evitar travamentos nas bordas
             return (self.x + padding, self.y + padding, self.width - 2 * padding, self.height - 2 * padding)
         if self.tile_type == "DANGER":
             if configGlobal.DEV_MODE:
                 return (self.x + padding, self.y + padding, self.width - 2 * padding, self.height - 2 * padding)
+            # Fora do modo DEV, a área de dano é levemente maior para garantir detecção
             inset = 2
             return (self.x + inset, self.y + inset, self.width - 2 * inset, self.height - 2 * inset)
         if self.tile_type == "COLLECTIBLE":
+            # Coletáveis têm hitbox menor para dar sensação de pegar o item ao tocá-lo
             inset = 2
             return (self.x + inset, self.y + inset, self.width - 2 * inset, self.height - 2 * inset)
         return (self.x, self.y, 0, 0)

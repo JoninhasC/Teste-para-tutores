@@ -4,15 +4,18 @@ import math
 
 class Player:
     def __init__(self, x, y):
+        # ===== POSIÇÃO E MOVIMENTO =====
         self.x = x
         self.y = y
 
         self.vx = 0.0
         self.vy = 0.0
 
+        # ===== ESTADO FÍSICO =====
         self.on_ground = False
         self.facing_right = True
 
+        # ===== SPRITES E ANIMAÇÕES =====
         self.idle_left_images = ["characters/azul01"]
         self.walk_left_images = ["characters/azul01", "characters/azul02"]
         self.jump_left_images = ["characters/azul01"]
@@ -21,27 +24,36 @@ class Player:
         self.walk_right_images = ["characters/azul01r", "characters/azul02r"]
         self.jump_right_images = ["characters/azul01r"]
 
+        # ===== CONTROLE DE ANIMAÇÃO =====
         self.current_animation = "idle"
         self.animation_frame = 0
         self.animation_timer = 0
         self.animation_speed = 8
 
+        # ===== DIMENSÕES DA HITBOX =====
         self.width = 16
         self.height = 24
         
+        # ===== SISTEMA DE VIDAS E DEBUG =====
         self._debug_ticks = 0
         self.lives = MAX_LIVES
 
     def update(self, level=None):
+        # ===== APLICAR GRAVIDADE =====
         self.vy += GRAVITY
 
+        # ===== SALVAR POSIÇÃO ANTERIOR PARA ROLLBACK =====
         old_x, old_y = self.x, self.y
 
         if level:
+            # ===== DETECTAR FASE ATUAL =====
             try:
                 self._phase = getattr(level, 'phase', 1)
             except Exception:
                 self._phase = 1
+            
+            # ===== COLISÃO HORIZONTAL =====
+            # Avança no eixo X e verifica paredes sólidas antes de confirmar o movimento
             self.x += self.vx
             player_rect_x = (self.x - self.width//2, self.y - self.height//2, self.width, self.height)
             if configGlobal.DEV_MODE:
@@ -52,6 +64,8 @@ class Player:
                 self.x = old_x
                 self.vx = 0
 
+            # ===== COLISÃO VERTICAL E INTERAÇÕES =====
+            # Atualiza posição vertical e trata queda, teto e itens em uma única varredura
             old_y = self.y
             self.y += self.vy
             player_rect_y = (self.x - self.width//2, self.y - self.height//2, self.width, self.height)
@@ -66,6 +80,7 @@ class Player:
                     self.vy = 0
                     self.on_ground = True
                 elif t.tile_type == "PLATFORM":
+                    # Plataforma só bloqueia quando o jogador vem de cima
                     top = t.y
                     feet_prev = old_y + (self.height // 2)
                     feet_now = self.y + (self.height // 2)
@@ -79,6 +94,7 @@ class Player:
                 elif t.tile_type == "COLLECTIBLE":
                     self.collect_item(t)
         else:
+            # ===== FALLBACK SEM LEVEL =====
             self.x += self.vx
             self.y += self.vy
             if self.y >= HEIGHT - 100:
@@ -88,11 +104,13 @@ class Player:
             else:
                 self.on_ground = False
 
+        # ===== FRICÇÃO HORIZONTAL =====
         if self.vx > 0:
             self.vx = max(0.0, self.vx - 0.5)
         elif self.vx < 0:
             self.vx = min(0.0, self.vx + 0.5)
 
+        # ===== ATUALIZAR ANIMAÇÃO E LIMITES =====
         self.update_animation()
 
         self._clamp_to_screen()
@@ -135,6 +153,7 @@ class Player:
 
         screen.blit(image_name, (self.x - self.width // 2, self.y - self.height // 2))
 
+    # ===== CONTROLES DE MOVIMENTO =====
     def move_left(self):
         self.vx = -PLAYER_SPEED
         self.facing_right = False
@@ -148,13 +167,16 @@ class Player:
             self.vy = JUMP_STRENGTH
             self.on_ground = False
     
+    # ===== SISTEMA DE COLISÃO AUXILIAR =====
     def check_tile_collisions(self, level, old_x, old_y):
+        # Reaproveita a grade de colisão para fazer testes simples pós-movimento
         player_rect = (self.x - self.width//2, self.y - self.height//2, 
                        self.width, self.height)
         
         collisions = level.check_collision(player_rect)
         
         if collisions['solid']:
+            # Recuo total garante que o jogador não atravesse paredes sólidas
             self.x = old_x
             self.y = old_y
             self.vx = 0
@@ -162,6 +184,7 @@ class Player:
             self.on_ground = True
         
         elif collisions['platform']:
+            # Plataformas só seguram quando o herói está caindo
             if self.vy > 0:
                 self.y = old_y
                 self.vy = 0
@@ -175,15 +198,18 @@ class Player:
         for tile in collisions['collectible']:
             self.collect_item(tile)
     
+    # ===== SISTEMA DE VIDAS =====
     def die(self):
         print(f"Player morreu! DEV_MODE: {configGlobal.DEV_MODE}")
         
+        # ===== TOCAR SOM DE DANO =====
         try:
             from main import play_damage_sound
             play_damage_sound()
         except Exception:
             pass
             
+        # ===== REDUZIR VIDAS E RESPAWN =====
         if self.lives > 0:
             self.lives -= 1
         if self.lives <= 0:
@@ -202,6 +228,7 @@ class Player:
         self.vx = 0
         self.vy = 0
     
+    # ===== SISTEMA DE COLETA =====
     def collect_item(self, tile):
         print(f"Coletou item: {tile.tile_id}")
         tile.tile_id = -1
@@ -218,6 +245,7 @@ class Player:
             except Exception:
                 pass
 
+    # ===== FUNÇÕES UTILITÁRIAS =====
     def _clamp_to_screen(self):
         left = self.width // 2
         right = WIDTH - self.width // 2

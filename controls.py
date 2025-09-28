@@ -1,20 +1,25 @@
 from pgzero.builtins import keyboard
 from configGlobal import *
 
+# ===== CONTROLE DE ENTRADA =====
 def handle_input(player, game_state):
     if game_state == 1 and player:
+        # ===== MOVIMENTO HORIZONTAL =====
         if keyboard.left or keyboard.a:
             player.move_left()
         elif keyboard.right or keyboard.d:
             player.move_right()
 
+        # ===== CONTROLES DE PULO =====
         if keyboard.space or keyboard.up or keyboard.w:
             player.jump()
         
+        # ===== CONTROLES ESPECIAIS =====
         if keyboard.q:
             print("Botão Q pressionado!")
             toggle_dev_mode()
 
+# ===== SISTEMA DE MODO DESENVOLVEDOR =====
 def toggle_dev_mode():
     import configGlobal
     configGlobal.DEV_MODE = not configGlobal.DEV_MODE

@@ -2,12 +2,14 @@ import pgzrun
 import random
 import math
 
+# ===== CONFIGURAÇÕES DE TELA =====
 TILE_SIZE = 18        
 ROWS = 20            
 COLS = 30            
 WIDTH = COLS * TILE_SIZE   
 HEIGHT = ROWS * TILE_SIZE  
 
+# ===== ESTADOS DO JOGO =====
 MENU = 0
 PLAYING = 1
 PAUSED = 2
@@ -15,20 +17,26 @@ VICTORY = 3
 GAME_OVER = 4
 CONTROLS = 5
 
+# ===== CONFIGURAÇÕES DE ÁUDIO =====
 SOUND_ENABLED = True
 MUSIC_ENABLED = True
 
+# ===== CONFIGURAÇÕES DE FÍSICA =====
 GRAVITY = 1
 JUMP_STRENGTH = -15
 PLAYER_SPEED = 3
 ENEMY_SPEED = 2
 
+# ===== SISTEMA DE ANIMAÇÃO =====
 ANIMATION_SPEED = 8
 
+# ===== SISTEMA DE VIDAS =====
 MAX_LIVES = 5
 
+# ===== MODO DESENVOLVEDOR =====
 DEV_MODE = False
 
+# ===== DEFINIÇÕES DE TIPOS DE TILES =====
 TILE_COLLISION_TYPES = {
     "SOLID": [1, 2, 3, 21, 22,  41, 42, 43,61, 62, 63,  93, 133, 81, 82, 83, 101, 102, 103, 121,  122, 123, 135, 141, 142, 143],
     "PLATFORM": [],
@@ -38,6 +46,7 @@ TILE_COLLISION_TYPES = {
     "EMPTY": [-1]
 }
 
+# ===== POSIÇÕES DE SPAWN =====
 SPAWN_X = 8
 SPAWN_Y = 330
 SPAWN2_X = 11

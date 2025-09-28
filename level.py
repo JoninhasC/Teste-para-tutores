@@ -3,6 +3,7 @@ from tile import Tile
 
 class Level:
     def __init__(self, phase: int = 1):
+        # ===== CONFIGURAÇÃO INICIAL =====
         self.phase = phase
         self.platforms = []
         self.objects = []
@@ -10,9 +11,11 @@ class Level:
         self.decorations = []
         self.tiles = []
         
+        # ===== CONSTRUÇÃO DO MAPA =====
         self.load_level()
         self.build_collision_map()
     
+    # ===== CARREGAMENTO DOS ARQUIVOS CSV =====
     def load_level(self):
         print("Carregando mapa...")
         suffix = "02" if self.phase == 2 else ""
@@ -35,13 +38,16 @@ class Level:
         
         print(f"Mapa carregado: {len(self.platforms)}x{len(self.platforms[0]) if self.platforms else 0}")
     
+    # ===== CONSTRUÇÃO DO MAPA DE COLISÃO =====
     def build_collision_map(self):
         print("Construindo mapa de colisão...")
         
+        # ===== CRIAÇÃO DA MATRIZ DE TILES =====
         self.tiles = []
         for y in range(ROWS):
             tile_row = []
             for x in range(COLS):
+                # Começa assumindo espaço vazio e sobrescreve conforme a camada mais relevante
                 tile_id = -1
                 
                 if y < len(self.platforms) and x < len(self.platforms[y]):
@@ -73,6 +79,7 @@ class Level:
         
         print(f"✓ Mapa de colisão construído: {len(self.tiles)}x{len(self.tiles[0]) if self.tiles else 0}")
     
+    # ===== CARREGAMENTO DE ARQUIVO CSV =====
     def load_csv(self, filename, target_list, layer_name):
         try:
             with open(filename, 'r') as file:
@@ -87,7 +94,9 @@ class Level:
         except Exception as e:
             print(f"✗ Erro ao carregar {filename}: {e}")
     
+    # ===== RENDERIZAÇÃO DO MAPA =====
     def draw(self, screen):
+        # ===== DESENHAR CAMADAS EM ORDEM =====
         self.draw_layer(screen, self.platforms, "platform")
         
         self.draw_layer(screen, self.objects, "object")
@@ -125,11 +134,13 @@ class Level:
             return (34, 139, 34)
         return (255, 255, 255)
     
+    # ===== ACESSO AOS TILES =====
     def get_tile_at(self, x, y):
         if 0 <= y < ROWS and 0 <= x < COLS:
             return self.tiles[y][x]
         return None
     
+    # ===== SISTEMA DE DETECÇÃO DE COLISÃO =====
     def check_collision(self, player_rect):
         collisions = {
             'solid': False,
@@ -138,6 +149,7 @@ class Level:
             'collectible': []
         }
         
+        # Limita busca às células vizinhas para manter detecção performática
         start_x = max(0, int(player_rect[0] // TILE_SIZE) - 1)
         end_x = min(COLS, int((player_rect[0] + player_rect[2]) // TILE_SIZE) + 2)
         start_y = max(0, int(player_rect[1] // TILE_SIZE) - 1)
@@ -151,6 +163,7 @@ class Level:
                     
                     if cw <= 0 or ch <= 0:
                         continue
+                    # Marca flags específicas para que cada entidade reaja conforme o tipo do tile
                     if self.rects_collide(player_rect, (cx, cy, cw, ch)):
                         if tile.tile_type == "SOLID":
                             collisions['solid'] = True
@@ -163,14 +176,18 @@ class Level:
         
         return collisions
     
+    # ===== TESTE DE COLISÃO ENTRE RETÂNGULOS =====
     def rects_collide(self, rect1, rect2):
+        # AABB clássico: quatro comparações rápidas
         return (rect1[0] < rect2[0] + rect2[2] and
                 rect1[0] + rect1[2] > rect2[0] and
                 rect1[1] < rect2[1] + rect2[3] and
                 rect1[1] + rect1[3] > rect2[1])
 
+    # ===== BUSCA OTIMIZADA DE TILES =====
     def get_tiles_overlapping(self, rect, include_types=None):
         tiles = []
+        # Define uma janela expandida para evitar cortes com tiles grandes
         start_x = max(0, int(rect[0] // TILE_SIZE) - 1)
         end_x = min(COLS, int((rect[0] + rect[2]) // TILE_SIZE) + 2)
         start_y = max(0, int(rect[1] // TILE_SIZE) - 1)
@@ -188,6 +205,7 @@ class Level:
                 cx, cy, cw, ch = tile.get_collision_rect()
                 if cw <= 0 or ch <= 0:
                     continue
+                # Só adiciona o tile se as hitboxes realmente se cruzarem
                 if self.rects_collide(rect, (cx, cy, cw, ch)):
                     tiles.append(tile)
         return tiles
