@@ -11,7 +11,6 @@ def handle_input(player, game_state):
         if keyboard.space or keyboard.up or keyboard.w:
             player.jump()
         
-        # Toggle modo DEV com Q
         if keyboard.q:
             print("Botão Q pressionado!")
             toggle_dev_mode()
@@ -23,3 +22,10 @@ def toggle_dev_mode():
     status = "ATIVADO" if configGlobal.DEV_MODE else "DESATIVADO"
     print(f"Modo DEV {status} - Player {'imortal' if configGlobal.DEV_MODE else 'mortal'}")
     print(f"Valor atual de DEV_MODE: {configGlobal.DEV_MODE}")
+    
+    # Tocar som de clique quando alternar modo DEV
+    try:
+        from main import play_click_sound
+        play_click_sound()
+    except Exception:
+        pass

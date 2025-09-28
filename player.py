@@ -227,6 +227,14 @@ class Player:
     def die(self):
         """Player morre"""
         print(f"Player morreu! DEV_MODE: {configGlobal.DEV_MODE}")
+        
+        # Tocar som de dano
+        try:
+            from main import play_damage_sound
+            play_damage_sound()
+        except Exception:
+            pass
+            
         # Reduz vida
         if self.lives > 0:
             self.lives -= 1
@@ -252,6 +260,14 @@ class Player:
         """Coleta um item e sinaliza evento para troca de fase se for o 67."""
         print(f"Coletou item: {tile.tile_id}")
         tile.tile_id = -1
+        
+        # Tocar som de coleta
+        try:
+            from main import play_collect_sound
+            play_collect_sound()
+        except Exception:
+            pass
+            
         if tile.tile_id == -1 and hasattr(self, 'on_collect'):
             # Notificar jogo do item coletado com o id original
             try:
