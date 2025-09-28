@@ -54,6 +54,11 @@ class Player:
         old_x, old_y = self.x, self.y
 
         if level:
+            # guardar fase atual para respawn
+            try:
+                self._phase = getattr(level, 'phase', 1)
+            except Exception:
+                self._phase = 1
             # --- mover no eixo X ---
             self.x += self.vx
             player_rect_x = (self.x - self.width//2, self.y - self.height//2, self.width, self.height)
@@ -216,16 +221,26 @@ class Player:
         """Player morre"""
         print("Player morreu!")
         # Por enquanto, só reseta a posição
-        self.x = SPAWN_X
-        self.y = SPAWN_Y
+        phase = getattr(self, '_phase', 1)
+        if phase == 2:
+            self.x = SPAWN2_X
+            self.y = SPAWN2_Y
+        else:
+            self.x = SPAWN_X
+            self.y = SPAWN_Y
         self.vx = 0
         self.vy = 0
     
     def collect_item(self, tile):
-        """Coleta um item"""
+        """Coleta um item e sinaliza evento para troca de fase se for o 67."""
         print(f"Coletou item: {tile.tile_id}")
-        # Por enquanto, só remove o tile (marcar como coletado)
         tile.tile_id = -1
+        if tile.tile_id == -1 and hasattr(self, 'on_collect'):
+            # Notificar jogo do item coletado com o id original
+            try:
+                self.on_collect(67)
+            except Exception:
+                pass
 
     # Utilitários
     def _clamp_to_screen(self):

@@ -22,6 +22,7 @@ HEIGHT = ROWS * TILE_SIZE  # Altura da tela: 20 * 18 = 360 pixels
 MENU = 0
 PLAYING = 1
 PAUSED = 2
+VICTORY = 3
 
 # ===== CONFIGURAÇÕES DE ÁUDIO =====
 SOUND_ENABLED = True
@@ -40,10 +41,11 @@ ANIMATION_SPEED = 8
 # Sistema dinâmico - cada tile_id tem um tipo de colisão
 TILE_COLLISION_TYPES = {
     # Sólidos (colisão completa)
-    "SOLID": [1, 2, 3, 41, 42, 43, 101, 102, 103, 121, 122, 123, 135, 141, 142, 143],
+    "SOLID": [1, 2, 3, 21, 22,  41, 42, 43,61, 62, 63,  93, 133, 81, 82, 83, 101, 102, 103, 121,  122, 123, 135, 141, 142, 143],
     
     # Plataformas (só colisão por cima)
-    "PLATFORM": [61, 62, 63, 81, 82, 83, 93, 133],
+    "PLATFORM": [],
+    
     
     # Perigosos (mata o player)
     "DANGER": [68],
@@ -61,5 +63,7 @@ TILE_COLLISION_TYPES = {
 # ===== POSIÇÃO INICIAL (SPAWN) =====
 SPAWN_X = 8
 SPAWN_Y = 330
+SPAWN2_X = 11
+SPAWN2_Y = 294
 
 

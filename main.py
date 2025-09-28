@@ -12,6 +12,7 @@ player = None              # Objeto do herói (será criado depois)
 enemies = []               # Lista de inimigos
 level = None               # Objeto do nível/mapa
 menu_buttons = []          # Lista de botões do menu
+current_phase = 1          # Fase atual
 
 def draw():
     """
@@ -22,6 +23,8 @@ def draw():
         draw_menu()        # Desenha o menu principal
     elif game_state == PLAYING:
         draw_game()        # Desenha o jogo
+    elif game_state == VICTORY:
+        draw_victory()
 
 def draw_menu():
     """Desenha o menu principal"""
@@ -66,7 +69,13 @@ def draw_game():
     if player:
         player.draw(screen)
     
-   
+
+def draw_victory():
+    screen.clear()
+    screen.fill((20, 90, 40))
+    screen.draw.text("Parabéns! Você concluiu o jogo!", center=(WIDTH // 2, 120), fontsize=28, color="white")
+    screen.draw.text("Clique para voltar ao MENU", center=(WIDTH // 2, 180), fontsize=20, color="yellow")
+    screen.draw.text("Ou pressione ESC para sair", center=(WIDTH // 2, 220), fontsize=18, color="white")
 
 def on_mouse_down(pos):
     """
@@ -75,6 +84,9 @@ def on_mouse_down(pos):
     """
     if game_state == MENU:
         handle_menu_click(pos)
+    elif game_state == VICTORY:
+        # Voltar ao menu
+        to_menu()
 
 def handle_menu_click(pos):
     """ Processa cliques no menu"""
@@ -94,10 +106,20 @@ def handle_menu_click(pos):
 
 def start_game():
     """ininicar o jogo"""
-    global game_state, player, level
+    global game_state, player, level, current_phase
     game_state = PLAYING
-    player = Player(SPAWN_X, SPAWN_Y)  # Cria o player na posição definida
-    level = Level()  # Cria o sistema de níveis
+    level = Level(current_phase)  # Carrega fase atual
+    player = Player(SPAWN_X, SPAWN_Y)
+    
+    # Registrar callback de coleta para avançar de fase
+    def on_collect(item_id):
+        if item_id == 67:
+            advance_phase()
+    player.on_collect = on_collect
+    # reset de estado ao iniciar
+    player.vx = 0
+    player.vy = 0
+    player.on_ground = False
     print("Inicializando Game")
 
 def toggle_sound():
@@ -112,6 +134,36 @@ def update(dt):
     if game_state == PLAYING and player:
         player.update(level)  # Passa o level para o player
         handle_input(player, game_state)
+    elif game_state == VICTORY:
+        # permitir sair com ESC
+        try:
+            from pgzero.builtins import keyboard
+            if keyboard.escape:
+                exit()
+        except Exception:
+            pass
+
+def advance_phase():
+    """Avança para próxima fase ou mostra vitória."""
+    global current_phase, level, player, game_state
+    if current_phase == 1:
+        current_phase = 2
+        level = Level(current_phase)
+        player.x, player.y = SPAWN2_X, SPAWN2_Y
+        player.vx = 0
+        player.vy = 0
+        player.on_ground = False
+        print("Fase 2 carregada")
+    else:
+        game_state = VICTORY
+        print("Vitória!")
+
+def to_menu():
+    global game_state, current_phase, player, level
+    game_state = MENU
+    current_phase = 1
+    player = None
+    level = None
 
 # ===== INICIAR O JOGO =====
 pgzrun.go()

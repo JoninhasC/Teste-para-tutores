@@ -2,11 +2,13 @@
 
 from configGlobal import *
 from tile import Tile
+import os
 import csv
 
 class Level:
-    def __init__(self):
-        """Inicializa o sistema de níveis"""
+    def __init__(self, phase: int = 1):
+        """Inicializa o sistema de níveis. phase=1 usa CSVs padrão; phase=2 usa arquivos *02.csv."""
+        self.phase = phase
         self.platforms = []  # final_plat.csv
         self.objects = []    # final_obj.csv  
         self.collectibles = []  # final_peg.csv
@@ -20,12 +22,40 @@ class Level:
     def load_level(self):
         """Carrega o mapa dos arquivos CSV"""
         print("Carregando mapa...")
-        
+        suffix = "02" if self.phase == 2 else ""
+        def pick(*candidates):
+            for name in candidates:
+                if name and os.path.exists(name):
+                    return name
+            return candidates[0]
+
+        plat = pick(
+            f"final_plat{suffix and suffix or ''}.csv",
+            f"final_plat_{suffix}.csv"
+        ) if suffix else "final_plat.csv"
+
+        obj = pick(
+            f"final_obj{suffix and suffix or ''}.csv",
+            f"final_obj_{suffix}.csv"
+        ) if suffix else "final_obj.csv"
+
+        # Alguns projetos nomeiam 'peg' como 'peco' por engano; considerar ambos
+        peg = pick(
+            f"final_peg{suffix and suffix or ''}.csv",
+            f"final_peg_{suffix}.csv",
+            f"final_peco{suffix and suffix or ''}.csv",
+            f"final_peco_{suffix}.csv"
+        ) if suffix else "final_peg.csv"
+
+        deco = pick(
+            f"final_deco{suffix and suffix or ''}.csv",
+            f"final_deco_{suffix}.csv"
+        ) if suffix else "final_deco.csv"
         # Carregar cada CSV
-        self.load_csv("final_plat.csv", self.platforms, "plataformas")
-        self.load_csv("final_obj.csv", self.objects, "objetos")
-        self.load_csv("final_peg.csv", self.collectibles, "itens")
-        self.load_csv("final_deco.csv", self.decorations, "decorações")
+        self.load_csv(plat, self.platforms, "plataformas")
+        self.load_csv(obj, self.objects, "objetos")
+        self.load_csv(peg, self.collectibles, "itens")
+        self.load_csv(deco, self.decorations, "decorações")
         
         print(f"Mapa carregado: {len(self.platforms)}x{len(self.platforms[0]) if self.platforms else 0}")
     
