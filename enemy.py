@@ -3,9 +3,6 @@ import math
 
 class Enemy:
     def __init__(self, x, y, enemy_type="a"):
-        """Cria um novo inimigo
-        enemy_type: "a", "b" (terrestres) ou "p" (voador)
-        """
         self.x = x
         self.y = y
         self.enemy_type = enemy_type
@@ -22,41 +19,33 @@ class Enemy:
         self.health = 1
         self.is_alive = True
         
-   
         self.animation_frame = 0
         self.animation_timer = 0
         self.animation_speed = 10
         
-     
         self.move_timer = 0
         self.move_direction = 1  
         self.move_duration = 60  
         
-        
         self.patrol_left = x - 50  
         self.patrol_right = x + 50  
-        
         
         self.fly_timer = 0
         self.fly_amplitude = 20  
         self.base_y = y
         
-        
         self._setup_sprites()
     
     def _setup_sprites(self):
-        """Configura os sprites de animação baseado no tipo de inimigo"""
         base_path = f"characters/{self.enemy_type}"
         
 
-      
         self.walk_left_images = [
             f"{base_path}01",
             f"{base_path}02", 
             f"{base_path}03"
         ]
         
-       
         self.walk_right_images = [
             f"{base_path}01r",
             f"{base_path}02r",
@@ -64,11 +53,9 @@ class Enemy:
         ]
     
     def update(self, level=None):
-        """Atualiza a lógica do inimigo"""
         if not self.is_alive:
             return
             
-      
         if self.is_flying:
             self._update_flying_movement()
         else:
@@ -77,51 +64,38 @@ class Enemy:
 
         self._update_animation()
         
-     
         self._clamp_to_screen()
         
-      
         if self.enemy_type == "a" and self.move_timer % 30 == 0:  
             print(f"Inimigo A - Pos: x:{int(self.x)}, y:{int(self.y)}, Dir: {self.move_direction}")
     
     def _update_flying_movement(self):
-        """Movimento do inimigo voador (padrão senoidal)"""
         self.fly_timer += 1
         
-     
         self.x += self.vx
-        
         
         self.y = self.base_y + math.sin(self.fly_timer * 0.1) * self.fly_amplitude
         
-       
         if self.x <= self.width // 2 or self.x >= WIDTH - self.width // 2:
             self.vx = -self.vx
             self.facing_right = self.vx > 0
     
     def _update_ground_movement(self, level):
-        """Movimento do inimigo terrestre"""
         self.move_timer += 1
         
-      
         old_x = self.x
         
-       
         self.x += self.vx * self.move_direction
-        
         
         if not self.is_flying:
             self.vy += GRAVITY
             self.y += self.vy
         
-        
         if level and not self.is_flying:
             self._check_ground_collision(level)
         
-        
         if level:
             self._check_wall_collision(level, old_x)
-        
         
         if self.move_timer >= self.move_duration:
             self.move_direction = -self.move_direction
@@ -129,46 +103,37 @@ class Enemy:
             self.move_timer = 0
     
     def _check_ground_collision(self, level):
-        """Verifica colisão com o chão para inimigos terrestres"""
         enemy_rect = (self.x - self.width//2, self.y - self.height//2, 
                      self.width, self.height)
-        
         
         tiles_below = level.get_tiles_overlapping(enemy_rect, {"SOLID"})
         
         for tile in tiles_below:
-            
             if self.vy > 0 and self.y < tile.y:
                 self.y = tile.y - self.height // 2
                 self.vy = 0
                 break
     
     def _check_wall_collision(self, level, old_x):
-        """Verifica colisão com paredes e inverte direção"""
         enemy_rect = (self.x - self.width//2, self.y - self.height//2, 
                      self.width, self.height)
-        
         
         solid_tiles = level.get_tiles_overlapping(enemy_rect, {"SOLID"})
         
         if solid_tiles:
-            
             self.x = old_x
             self.move_direction = -self.move_direction
             self.facing_right = self.move_direction > 0
-            self.move_timer = 0  
+            self.move_timer = 0
             print(f"Inimigo {self.enemy_type} encontrou parede em x:{int(self.x)}, virando!")
     
     def _update_animation(self):
-        """Atualiza a animação do inimigo"""
         self.animation_timer += 1
         if self.animation_timer >= self.animation_speed:
             self.animation_timer = 0
-            self.animation_frame = (self.animation_frame + 1) % 3  
+            self.animation_frame = (self.animation_frame + 1) % 3
     
     def _clamp_to_screen(self):
-        """Mantém o inimigo dentro da tela"""
-        
         if self.x < self.width // 2:
             self.x = self.width // 2
             self.move_direction = 1
@@ -181,11 +146,9 @@ class Enemy:
             print(f"Inimigo {self.enemy_type} atingiu borda direita da tela")
     
     def draw(self, screen):
-        """Desenha o inimigo na tela"""
         if not self.is_alive:
             return
             
-        
         images = self.walk_right_images if self.facing_right else self.walk_left_images
         
         if images and self.animation_frame < len(images):
@@ -193,19 +156,16 @@ class Enemy:
             screen.blit(image_name, (self.x - self.width // 2, self.y - self.height // 2))
     
     def get_collision_rect(self):
-        """Retorna o retângulo de colisão do inimigo"""
         return (self.x - self.width//2, self.y - self.height//2, 
                 self.width, self.height)
     
     def take_damage(self, damage=1):
-        """Inimigo recebe dano"""
         self.health -= damage
         if self.health <= 0:
             self.is_alive = False
             print(f"Inimigo {self.enemy_type} morreu!")
     
     def deal_damage_to_player(self, player):
-        """Causa dano ao player se colidir"""
         if not self.is_alive:
             return False
             
@@ -213,13 +173,12 @@ class Enemy:
         player_rect = (player.x - player.width//2, player.y - player.height//2,
                       player.width, player.height)
         
-       
         if (enemy_rect[0] < player_rect[0] + player_rect[2] and
             enemy_rect[0] + enemy_rect[2] > player_rect[0] and
             enemy_rect[1] < player_rect[1] + player_rect[3] and
             enemy_rect[1] + enemy_rect[3] > player_rect[1]):
             
-            player.die()  
+            player.die()
             return True
         
         return False

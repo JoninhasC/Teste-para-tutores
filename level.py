@@ -3,24 +3,20 @@ from tile import Tile
 
 class Level:
     def __init__(self, phase: int = 1):
-        
         self.phase = phase
-        self.platforms = []  
-        self.objects = []   
-        self.collectibles = [] 
-        self.decorations = []  
-        self.tiles = []  
-        
+        self.platforms = []
+        self.objects = []
+        self.collectibles = []
+        self.decorations = []
+        self.tiles = []
         
         self.load_level()
         self.build_collision_map()
     
     def load_level(self):
-        """Carrega o mapa dos arquivos CSV"""
         print("Carregando mapa...")
         suffix = "02" if self.phase == 2 else ""
         
-        # Definir nomes dos arquivos baseado na fase
         if suffix:
             plat_file = "final_plat02.csv"
             obj_file = "final_obj02.csv"
@@ -40,37 +36,29 @@ class Level:
         print(f"Mapa carregado: {len(self.platforms)}x{len(self.platforms[0]) if self.platforms else 0}")
     
     def build_collision_map(self):
-       
         print("Construindo mapa de colisão...")
-        
         
         self.tiles = []
         for y in range(ROWS):
             tile_row = []
             for x in range(COLS):
-                
                 tile_id = -1
-                
                 
                 if y < len(self.platforms) and x < len(self.platforms[y]):
                     if self.platforms[y][x] != -1:
                         tile_id = self.platforms[y][x]
                 
-                
                 if tile_id == -1 and y < len(self.objects) and x < len(self.objects[y]):
                     if self.objects[y][x] != -1:
                         tile_id = self.objects[y][x]
-                
                 
                 if tile_id == -1 and y < len(self.collectibles) and x < len(self.collectibles[y]):
                     if self.collectibles[y][x] != -1:
                         tile_id = self.collectibles[y][x]
                 
-                
                 if tile_id == -1 and y < len(self.decorations) and x < len(self.decorations[y]):
                     if self.decorations[y][x] != -1:
                         tile_id = self.decorations[y][x]
-                
                 
                 layer_name = (
                     "platform" if (y < len(self.platforms) and x < len(self.platforms[y]) and self.platforms[y][x] != -1) else
@@ -86,14 +74,11 @@ class Level:
         print(f"✓ Mapa de colisão construído: {len(self.tiles)}x{len(self.tiles[0]) if self.tiles else 0}")
     
     def load_csv(self, filename, target_list, layer_name):
-        """Carrega arquivo CSV sem usar biblioteca csv"""
         try:
             with open(filename, 'r') as file:
                 for line in file:
-                    # Remove quebras de linha e divide por vírgulas
                     line = line.strip()
-                    if line:  # Se a linha não estiver vazia
-                        # Divide por vírgulas e converte para inteiros
+                    if line:
                         tile_row = [int(tile.strip()) for tile in line.split(',')]
                         target_list.append(tile_row)
             print(f"✓ {layer_name}: {filename} carregado com {len(target_list)} linhas")
@@ -103,35 +88,26 @@ class Level:
             print(f"✗ Erro ao carregar {filename}: {e}")
     
     def draw(self, screen):
-    
         self.draw_layer(screen, self.platforms, "platform")
         
-       
         self.draw_layer(screen, self.objects, "object")
         
-        
         self.draw_layer(screen, self.collectibles, "collectible")
-        
         
         self.draw_layer(screen, self.decorations, "decoration")
     
     def draw_layer(self, screen, layer_data, layer_type):
-        
         for y, row in enumerate(layer_data):
             for x, tile_id in enumerate(row):
-                if tile_id != -1:  
-                   
+                if tile_id != -1:
                     screen_x = x * TILE_SIZE
                     screen_y = y * TILE_SIZE
                     
-                    
                     image_name = f"tile_{tile_id:04d}"
-                    
                     
                     try:
                         screen.blit(image_name, (screen_x, screen_y))
                     except:
-                        
                         color = self.get_tile_color(tile_id, layer_type)
                         screen.draw.filled_rect(
                             (screen_x, screen_y, TILE_SIZE, TILE_SIZE), 
@@ -139,32 +115,28 @@ class Level:
                         )
     
     def get_tile_color(self, tile_id, layer_type):
-        
         if layer_type == "platform":
-            return (139, 69, 19) 
+            return (139, 69, 19)
         elif layer_type == "object":
-            return (128, 128, 128)  
+            return (128, 128, 128)
         elif layer_type == "collectible":
-            return (255, 215, 0)  
+            return (255, 215, 0)
         elif layer_type == "decoration":
-            return (34, 139, 34)  
-        return (255, 255, 255)  
+            return (34, 139, 34)
+        return (255, 255, 255)
     
     def get_tile_at(self, x, y):
-        
         if 0 <= y < ROWS and 0 <= x < COLS:
             return self.tiles[y][x]
         return None
     
     def check_collision(self, player_rect):
-        
         collisions = {
             'solid': False,
             'platform': False,
             'danger': False,
             'collectible': []
         }
-        
         
         start_x = max(0, int(player_rect[0] // TILE_SIZE) - 1)
         end_x = min(COLS, int((player_rect[0] + player_rect[2]) // TILE_SIZE) + 2)
@@ -192,14 +164,12 @@ class Level:
         return collisions
     
     def rects_collide(self, rect1, rect2):
-        
         return (rect1[0] < rect2[0] + rect2[2] and
                 rect1[0] + rect1[2] > rect2[0] and
                 rect1[1] < rect2[1] + rect2[3] and
                 rect1[1] + rect1[3] > rect2[1])
 
     def get_tiles_overlapping(self, rect, include_types=None):
-       
         tiles = []
         start_x = max(0, int(rect[0] // TILE_SIZE) - 1)
         end_x = min(COLS, int((rect[0] + rect[2]) // TILE_SIZE) + 2)
@@ -211,7 +181,6 @@ class Level:
                 tile = self.get_tile_at(x, y)
                 if not tile or tile.tile_id == -1:
                     continue
-               
                 if tile.tile_type in ("DECORATION", "EMPTY"):
                     continue
                 if include_types and tile.tile_type not in include_types:
