@@ -297,12 +297,11 @@ def create_enemies_for_phase(phase):
         # Fase 1: 1 inimigo de cada tipo
         # Inimigo A que anda até encontrar parede
         enemies.append(Enemy(239, 133, "a"))  # Inimigo terrestre A
-        enemies.append(Enemy(200, 300, "b"))  # Inimigo terrestre B  
         enemies.append(Enemy(300, 200, "p"))  # Inimigo voador P
     elif phase == 2:
         # Fase 2: 1 inimigo de cada tipo em posições diferentes
         enemies.append(Enemy(299, 150, "a"))  # Inimigo terrestre A
-        enemies.append(Enemy(250, 280, "b"))  # Inimigo terrestre B
+        enemies.append(Enemy(209, 294, "b"))  # Inimigo terrestre B
         enemies.append(Enemy(350, 180, "p"))  # Inimigo voador P
     
     print(f"Criados {len(enemies)} inimigos para a Fase {phase}")

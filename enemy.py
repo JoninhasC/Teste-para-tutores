@@ -15,7 +15,7 @@ class Enemy:
         self.height = 16
         
         # Velocidade e direção
-        self.vx = ENEMY_SPEED * 1.2  if enemy_type != "p" else ENEMY_SPEED * 0.7  # Velocidade mais devagar para terrestres
+        self.vx = ENEMY_SPEED * 1.15  if enemy_type != "p" else ENEMY_SPEED * 0.7  # Velocidade mais devagar para terrestres
         self.vy = 0
         self.facing_right = True
         
@@ -50,7 +50,7 @@ class Enemy:
         """Configura os sprites de animação baseado no tipo de inimigo"""
         base_path = f"characters/{self.enemy_type}"
         
-        
+
         # Sprites para esquerda (01, 02, 03)
         self.walk_left_images = [
             f"{base_path}01",
